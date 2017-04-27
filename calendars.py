@@ -84,6 +84,7 @@ def main():
     # Fills a biz_import list with the work events modified for import to personal account
     biz_import = []
     for event in biz_events:
+        declined = False
         if 'attendees' in event: # not all events have attendees
             for attendee in event['attendees']:
                 # finds you (at work) in the list of attendees
@@ -165,6 +166,7 @@ def main():
         # (I'm sure some of this could be factored into a separate function.)
         new_event.pop('id', None)
         new_event.pop('recurringEventId', None)
+        declined = False
         if 'attendees' in new_event: # not all events have attendees
             for attendee in new_event['attendees']:
                 # finds you in the list of attendees
