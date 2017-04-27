@@ -84,43 +84,43 @@ def main():
     # Fills a biz_import list with the work events modified for import to personal account
     biz_import = []
     for event in biz_events:
-        if event['status'] != 'cancelled': # ignores cancelled events
-            ignore = False
-            if 'attendees' in event: # not all events have attendees
-                for attendee in event['attendees']:
-                    # finds you (at work) in the list of attendees
-                    if attendee['email'] == WORK_EMAIL:
-                        if attendee['responseStatus'] == 'declined':
-                            ignore = True # If you've declined the event, ignores it...
-            if ignore is not False:
-                # ... i.e. from here, carries on only if you haven't declined. You don't
-                #  need to duplicate your record of the things you don't plan to attend.
-                new_event = event
+        if 'attendees' in event: # not all events have attendees
+            for attendee in event['attendees']:
+                # finds you (at work) in the list of attendees
+                if attendee['email'] == WORK_EMAIL:
+                    if attendee['responseStatus'] == 'declined':
+                        # Having discovered that you're not planning to attend, saves
+                        # this for later.
+                        declined = True
+        new_event = event
 
-                # Tags the events in the description field with something distinctive
-                new_event['description'] = event.get('description', '') + \
-                                                                '\n\n## sync\'d from work ##'
+        # Tags the events in the description field with something distinctive
+        new_event['description'] = event.get('description', '') + \
+                                                        '\n\n## sync\'d from work ##'
 
-                # Removes the immutable IDs from the originating calendar.
-                # I think it's the standard iCalUID, which remains on the events, that means
-                # this script can run every hour without causing loads of duplicate events.
-                new_event.pop('id', None)
-                new_event.pop('recurringEventId', None)
+        # Removes the immutable IDs from the originating calendar.
+        # I think it's the standard iCalUID, which remains on the events, that means
+        # this script can run every hour without causing loads of duplicate events.
+        new_event.pop('id', None)
+        new_event.pop('recurringEventId', None)
 
-                # Strips off attendees so that you don't accidentally re-invite all your client
-                # contacts to meetings that have been cancelled, or execute some similarly
-                # career-limiting mistake.
-                new_event.pop('attendees', None)
+        # Strips off attendees so that you don't accidentally re-invite all your client
+        # contacts to meetings that have been cancelled, or execute some similarly
+        # career-limiting mistake.
+        new_event.pop('attendees', None)
 
-                # Fixes your personal self as the organizer, so that the events always remain
-                # compatible with the fickle laws of calendars: i.e. you do need to be
-                # either attending or organising a meeting that's in your calendar.
-                new_event['organizer'] = {
-                    'displayName': 'Kevin Joyner',
-                    'email': PERSONAL_EMAIL,
-                    'self': True
-                    }
-                biz_import.append(new_event)
+        # Fixes your personal self as the organizer, so that the events always remain
+        # compatible with the fickle laws of calendars: i.e. you do need to be
+        # either attending or organising a meeting that's in your calendar.
+        new_event['organizer'] = {
+            'displayName': 'Kevin Joyner',
+            'email': PERSONAL_EMAIL,
+            'self': True
+            }
+        # Converts declined attendence into having cancelled your own appointment.
+        if declined is True:
+            new_event['status'] = 'cancelled'
+        biz_import.append(new_event)
 
     for event in biz_import:
         # The Google Calendar API can take 5 imports per second, apparently. I don't know how you're

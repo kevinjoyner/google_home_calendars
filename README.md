@@ -14,11 +14,11 @@ I run the script hourly with cron, from a linux server.
 ## Feature details
 The script
 - Works with events as old as six months ago, and up to six months into the future
-- Ignores events that have been cancelled
-- Ignores events that you've declined, because you don't need multiple records of stuff you're not doing
 - Tags your work events as they're copied into your personal account, by adding a line to the description, "## sync'd from work ##
 - Removes all attendees from the copies of your work events...
 - ... and fixes you as the organiser of everything, in those copies. Your work account should remain in control.
+- Transfers cancellations from work to personal, to keep your calendars aligned
+- Converts your having declined to attend a work calendar event into a cancellation in your personal account (where you are the organizer of work events, which have no attendees)
 - In the work secondary calendar in your personal Google account, the events are all set to Private visibility, ensuring restricted access to work information.
 
 ## Apologies
@@ -27,4 +27,3 @@ The script
 
 ## On that note
 - The .gitignore file on Github excludes files in the credentials folder so that would need changing if you're going to handle the credentials like I do.
-
