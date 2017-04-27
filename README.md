@@ -15,10 +15,10 @@ I run the script hourly with cron, from a linux server.
 The script
 - Works with events as old as six months ago, and up to six months into the future
 - Tags your work events as they're copied into your personal account, by adding a line to the description, "## sync'd from work ##
-- Removes all attendees from the copies of your work events...
-- ... and fixes you as the organiser of everything, in those copies. Your work account should remain in control.
-- Transfers cancellations from work to personal, to keep your calendars aligned
-- Converts your having declined to attend a work calendar event into a cancellation in your personal account (where you are the organizer of work events, which have no attendees)
+- Removes all attendees from the copies of your events...
+- ... and fixes you as the organiser of copied events. Removing attendees is probably key to avoiding the risk of spamming other people's calendars.
+- Transfers cancellations to keep your calendars aligned
+- Converts having declined to attend an origin calendar event into a cancellation in the destination (where you are the organizer of events that have no attendees)
 - In the work secondary calendar in your personal Google account, the events are all set to Private visibility, ensuring restricted access to work information.
 
 ## Apologies

@@ -165,6 +165,14 @@ def main():
         # (I'm sure some of this could be factored into a separate function.)
         new_event.pop('id', None)
         new_event.pop('recurringEventId', None)
+        if 'attendees' in new_event: # not all events have attendees
+            for attendee in new_event['attendees']:
+                # finds you in the list of attendees
+                if attendee['email'] == PERSONAL_EMAIL:
+                    if attendee['responseStatus'] == 'declined':
+                        # Having discovered that you're not planning to attend, saves
+                        # this for later.
+                        declined = True
         new_event.pop('attendees', None)
         # Fills the two lists based on the presence of the description field work tag.
         if 'description' in new_event:
@@ -188,6 +196,9 @@ def main():
                 'email': PERSONAL_PERSONAL_CAL_ID,
                 'self': True
             }
+            # Converts declined attendence into having cancelled your own appointment.
+            if declined is True:
+                new_event['status'] = 'cancelled'
             personal_events.append(new_event)
 
     # Imports the personal events into the personal secondary calendar in my personal account
@@ -224,4 +235,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
