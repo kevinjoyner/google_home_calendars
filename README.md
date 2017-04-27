@@ -14,7 +14,7 @@ I run the script hourly with cron, from a linux server.
 ## Feature details
 The script
 - Works with events as old as six months ago, and up to six months into the future
-- Tags your work events as they're copied into your personal account, by adding a line to the description, "## sync'd from work ##
+- Tags your work events as they're copied into your personal account, by adding a line to the description, "## sync'd from work ##"
 - Removes all attendees from the copies of your events...
 - ... and fixes you as the organiser of copied events. Removing attendees is probably key to avoiding the risk of spamming other people's calendars.
 - Transfers cancellations to keep your calendars aligned
