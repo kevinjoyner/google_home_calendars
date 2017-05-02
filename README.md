@@ -23,7 +23,7 @@ The script
 
 ## Apologies
 - There are bits of the code that I'm sure are inelegant and inefficient.
-- I've used OAuth for authentication with Google. I run the script locally and then allow the credentials token to be pushed to my server. This which works for me, but no doubt it's stupid and bad pratice or something.
+- I've used OAuth for authentication with Google. I run the script locally and then allow the credentials token to be pushed to my server. This works for me, but no doubt it's stupid and bad pratice or something: I think there's a better way for a server application to authenticate with the Google APIs.
 
 ## On that note
-- The .gitignore file on Github excludes files in the credentials folder so that would need changing if you're going to handle the credentials like I do.
+- The .gitignore file on Github excludes files in the credentials folder. If you use git to deploy to a server that the script runs from, the .gitignore file will need changing if you're handling the credentials like I do.
