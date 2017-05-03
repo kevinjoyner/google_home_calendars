@@ -74,6 +74,7 @@ def main():
         events_result = service.events().list(
             calendarId='primary', pageToken=page_token,
             singleEvents=True, orderBy='startTime',
+            showDeleted=True, showHiddenInvitations=True,
             timeMin=months_ago, timeMax=months_away
         ).execute()
         biz_events.extend(events_result.get('items'))
@@ -149,6 +150,7 @@ def main():
         events_result = service.events().list(
             calendarId=PERSONAL_EMAIL, pageToken=page_token,
             singleEvents=True, orderBy='startTime',
+            showDeleted=True, showHiddenInvitations=True,
             timeMin=months_ago, timeMax=months_away
         ).execute()
         all_events.extend(events_result.get('items'))
@@ -191,14 +193,25 @@ def main():
                 # 'private' visibility.
                 new_event['visibility']	= 'private'
                 work_events.append(new_event)
+            else:
+                # Sets the right organiser for the calendar the event is going into.
+                new_event['organizer'] = {
+                    'displayName': 'Kevin - Personal only',
+                    'email': PERSONAL_PERSONAL_CAL_ID,
+                    'self': True
+                }
+                # Converts declined attendence into having cancelled your own appointment.
+                if declined is True:
+                    new_event['status'] = 'cancelled'
+                personal_events.append(new_event)
         else:
-            # Sets the right organiser for the calendar the event is going into.
+            # I don't know if this happens but if there was no description at all, it couldn't
+            # be a work event.
             new_event['organizer'] = {
                 'displayName': 'Kevin - Personal only',
                 'email': PERSONAL_PERSONAL_CAL_ID,
                 'self': True
             }
-            # Converts declined attendence into having cancelled your own appointment.
             if declined is True:
                 new_event['status'] = 'cancelled'
             personal_events.append(new_event)
