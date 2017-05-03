@@ -20,28 +20,27 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+# Import your private configuration variables.
+
+from config import *
+
+# These are
+# - CLIENT_SECRET_FILE
+# (Set this to the file name of your client secret JSON file.)
+# - WORK_EMAIL
+# - PERSONAL_EMAIL
+# - PERSONAL_PERSONAL_CAL_ID
+# - WORK_PERSONAL_CAL_ID
+# (Create secondary calendars in your personal Google account, one for work and one for
+# personal events. These are the IDs for each.)
+
 # Sets things needed to authenticate with Google API
 FLAGS = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
 SCOPES = [
     'https://www.googleapis.com/auth/calendar'
 ]
-CREDENTIALS_DIR = 'credentials/'
 # I don't think this name matters, but you might update it
 APPLICATION_NAME = 'API thing'
-
-# Set this to the file name of your client secret JSON file
-CLIENT_SECRET_FILE = CREDENTIALS_DIR + \
-    'client_secret_000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com.json'
-
-# Update these email addresses.
-WORK_EMAIL = 'kevin.joyner@work.co.uk'
-PERSONAL_EMAIL = 'personal@gmail.com'
-
-# Create secondary calendars in your personal Google account, one for work and one for personal
-#  events. Update the IDs for each here.
-PERSONAL_PERSONAL_CAL_ID = 'xxxxxxxxxxxxxxxxxxxxxxxxxx@group.calendar.google.com'
-WORK_PERSONAL_CAL_ID = 'xxxxxxxxxxxxxxxxxxxxxxxxxx@group.calendar.google.com'
-
 
 def get_credentials(flags):
     """ A function for retrieving and storing Google credentials. It returns a Google APIs
