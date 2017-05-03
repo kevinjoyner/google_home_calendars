@@ -71,7 +71,7 @@ def main():
     page_token = None
     while True:
         events_result = service.events().list(
-            calendarId='primary', pageToken=page_token,
+            calendarId=WORK_EMAIL, pageToken=page_token,
             singleEvents=True, orderBy='startTime',
             showDeleted=True, showHiddenInvitations=True,
             timeMin=months_ago, timeMax=months_away
@@ -99,12 +99,6 @@ def main():
         new_event['description'] = event.get('description', '') + \
                                                         '\n\n## sync\'d from work ##'
 
-        # Removes the immutable IDs from the originating calendar.
-        # I think it's the standard iCalUID, which remains on the events, that means
-        # this script can run every hour without causing loads of duplicate events.
-        new_event.pop('id', None)
-        new_event.pop('recurringEventId', None)
-
         # Strips off attendees so that you don't accidentally re-invite all your client
         # contacts to meetings that have been cancelled, or execute some similarly
         # career-limiting mistake.
@@ -124,6 +118,12 @@ def main():
         biz_import.append(new_event)
 
     for event in biz_import:
+        # Removes the immutable IDs from the event, but saves id in case it's needed.
+        # I think it's the standard iCalUID, which remains on the events, that means
+        # this script can run every hour without causing loads of duplicate events.
+        originating_id = event.pop('id', None)
+        event.pop('recurringEventId', None)
+
         # The Google Calendar API can take 5 imports per second, apparently. I don't know how you're
         # really supposed to implement "exponential backoff" but I thought I needed this
         # number - the seconds to wait between requests - to be greater than zero, so it's divided
@@ -138,6 +138,11 @@ def main():
             except HttpError as err:
                 if err.resp.status in [403, 500, 503]:
                     wait = wait * wait # If e.g. a Rate Limit Exceeded error, squares the wait time
+                elif 'Invalid sequence value.' in err.resp.get('message', ''):
+                    event_lookup = service.events().get(
+                        calendarId=WORK_EMAIL, eventId=originating_id
+                    ).execute()
+                    event['sequence'] = event_lookup.get('sequence', 99)
                 else: raise
             else: break
 
@@ -165,8 +170,6 @@ def main():
         new_event = event
         # Preps the events for import in the same way as before.
         # (I'm sure some of this could be factored into a separate function.)
-        new_event.pop('id', None)
-        new_event.pop('recurringEventId', None)
         declined = False
         if 'attendees' in new_event: # not all events have attendees
             for attendee in new_event['attendees']:
@@ -217,6 +220,8 @@ def main():
 
     # Imports the personal events into the personal secondary calendar in my personal account
     for event in personal_events:
+        originating_id = event.pop('id', None)
+        event.pop('recurringEventId', None)
         wait = 2.25
         while True:
             try:
@@ -228,11 +233,18 @@ def main():
             except HttpError as err:
                 if err.resp.status in [403, 500, 503]:
                     wait = wait * wait
+                elif 'Invalid sequence value.' in err.resp.get('message', ''):
+                    event_lookup = service.events().get(
+                        calendarId=PERSONAL_PERSONAL_CAL_ID, eventId=originating_id
+                    ).execute()
+                    event['sequence'] = event_lookup.get('sequence', 99)
                 else: raise
             else: break
 
     # Imports the work events into the work secondary calendar in my personal account
     for event in work_events:
+        originating_id = event.pop('id', None)
+        event.pop('recurringEventId', None)
         wait = 2.25
         while True:
             try:
@@ -244,6 +256,11 @@ def main():
             except HttpError as err:
                 if err.resp.status in [403, 500, 503]:
                     wait = wait * wait
+                elif 'Invalid sequence value.' in err.resp.get('message', ''):
+                    event_lookup = service.events().get(
+                        calendarId=WORK_PERSONAL_CAL_ID, eventId=originating_id
+                    ).execute()
+                    event['sequence'] = event_lookup.get('sequence', 99)
                 else: raise
             else: break
 
