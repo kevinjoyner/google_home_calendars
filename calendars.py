@@ -152,7 +152,7 @@ def import_events(service, events_list, dest_cal_id, orig_cal_id):
             except HttpError as err:
                 if err.resp.status in [403, 500, 503]:
                     wait = wait * wait # If e.g. a Rate Limit Exceeded error, squares the wait time
-                elif 'Invalid sequence value.' in err.resp.get('message', ''):
+                elif 'Invalid sequence value.' in err.content:
                     event_lookup = service.events().get(
                         calendarId=orig_cal_id, eventId=originating_id
                     ).execute()
