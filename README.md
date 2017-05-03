@@ -27,3 +27,4 @@ The script
 
 ## On that note
 - The .gitignore file on Github excludes files in the credentials folder. If you use git to deploy to a server that the script runs from, the .gitignore file will need changing if you're handling the credentials like I do.
+- I wanted to use one repo for my server and for Github, so I've moved the personal configuration variables into a separate file that gets imported by the main script. I'm hiding this file, "/config.py", from the repo with the .gitignore file.
