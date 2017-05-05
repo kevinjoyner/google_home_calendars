@@ -157,7 +157,9 @@ def import_events(service, events_list, dest_cal_id, orig_cal_id):
                         calendarId=orig_cal_id, eventId=originating_id
                     ).execute()
                     event['sequence'] = event_lookup.get('sequence', 99)
-                else: raise
+                else:
+                    print(err.content)
+                    raise
             else: break
 
 def divide_all_events(all_events):
