@@ -12,6 +12,7 @@ secondary calendar for just the work events, and one for the personal ones.
 import datetime
 from datetime import timedelta
 from time import sleep
+import json
 import argparse
 import httplib2
 from apiclient import discovery
@@ -152,14 +153,14 @@ def import_events(service, events_list, dest_cal_id, orig_cal_id):
             except HttpError as err:
                 if err.resp.status in [403, 500, 503]:
                     wait = wait * wait # If e.g. a Rate Limit Exceeded error, squares the wait time
-                elif 'Invalid sequence value.' in err.content:
+                elif 'Invalid sequence value.' in json.loads(
+                        err.content.decode('utf-8')
+                )['error']['message']:
                     event_lookup = service.events().get(
                         calendarId=orig_cal_id, eventId=originating_id
                     ).execute()
                     event['sequence'] = event_lookup.get('sequence', 99)
-                else:
-                    print(err.content)
-                    raise
+                else: raise
             else: break
 
 def divide_all_events(all_events):
