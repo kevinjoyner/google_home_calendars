@@ -45,7 +45,7 @@ APPLICATION_NAME = 'API thing'
 def get_credentials(flags):
     """ A function for retrieving and storing Google credentials. It returns a Google APIs
      credentials object. """
-    
+
     credential_path = CREDENTIALS_DIR + 'google-credentials.json'
     store = Storage(credential_path)
     credentials = store.get()
