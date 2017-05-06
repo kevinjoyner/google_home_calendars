@@ -43,6 +43,11 @@ SCOPES = [
 # I don't think this name matters, but you might update it
 APPLICATION_NAME = 'API thing'
 
+# Prepares min and max dates for the oldest and newest events to handle
+MONTHS_AGO = (datetime.datetime.utcnow() - timedelta(days=93)).isoformat() + 'Z'
+MONTHS_AWAY = (datetime.datetime.utcnow() + timedelta(days=93)).isoformat() + 'Z'
+
+
 def get_credentials(flags):
     """ A function for retrieving and storing Google credentials. It returns a Google APIs
      credentials object. """
@@ -61,10 +66,6 @@ def get_credentials(flags):
 def get_events_list(service, cal_id):
     """ Fetches list of events from specified calendar ID. """
 
-    # Prepares min and max dates for the oldest and newest events to handle
-    months_ago = (datetime.datetime.utcnow() - timedelta(days=93)).isoformat() + 'Z'
-    months_away = (datetime.datetime.utcnow() + timedelta(days=93)).isoformat() + 'Z'
-
     output = []
     page_token = None
     while True:
@@ -72,7 +73,7 @@ def get_events_list(service, cal_id):
             calendarId=cal_id, pageToken=page_token,
             singleEvents=True, orderBy='startTime',
             showDeleted=True, showHiddenInvitations=True,
-            timeMin=months_ago, timeMax=months_away
+            timeMin=MONTHS_AGO, timeMax=MONTHS_AWAY
         ).execute()
         output.extend(events_result.get('items'))
         page_token = events_result.get('nextPageToken')
@@ -83,7 +84,7 @@ def get_events_list(service, cal_id):
 
 def decline_check(event, declining_email):
     """ Returns boolean indicating whether an event has been declined by the
-     specified email address."""
+     specified email address. """
 
     declined = False
     if 'attendees' in event: # not all events have attendees
@@ -127,6 +128,43 @@ def prep_import_from_work(events_list):
         output.append(event)
 
     return output
+
+
+def del_cancels(service, events_list, cal_id):
+    """ Deletes from the specified calendar, based on the iCalUID, all events in the list that
+     are cancelled. Returns the events list with the deleted events removed. """
+
+    for_deletion = []
+    for event in events_list:
+        if event.get('status', None) == 'cancelled':
+            # The prep_import_from_work function has already 'converted' declines
+            # into cancellations.
+            for_deletion.append(event)
+            events_list.remove(event)
+
+            matching_events = []
+            page_token = None
+            while True:
+                events_result = service.events().list(
+                    calendarId=cal_id, pageToken=page_token,
+                    singleEvents=True, orderBy='startTime',
+                    showDeleted=True, showHiddenInvitations=True,
+                    timeMin=MONTHS_AGO, timeMax=MONTHS_AWAY,
+                    iCalUID=event.get('iCalUID', '')
+                ).execute()
+                matching_events.extend(events_result.get('items'))
+                page_token = events_result.get('nextPageToken')
+                if not page_token:
+                    break
+
+            for item in matching_events:
+                service.events().delete(
+                    calendarId=cal_id,
+                    eventId=item.get('id', '')
+                ).execute()
+
+    return events_list
+
 
 def import_events(service, events_list, dest_cal_id, orig_cal_id):
     """ Imports list of events to the destination calendar. Uses the originating calendar to work
@@ -217,6 +255,7 @@ def divide_all_events(all_events):
 
 def main():
     """ The main function of the script """
+
     credentials = get_credentials(FLAGS)
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
@@ -225,7 +264,9 @@ def main():
     biz_events = get_events_list(service, WORK_EMAIL)
 
     # Fills a biz_import list with the work events modified for import to personal account
-    biz_import = prep_import_from_work(biz_events)
+    all_biz_import = prep_import_from_work(biz_events)
+
+    biz_import = del_cancels(service, all_biz_import, PERSONAL_EMAIL)
 
     import_events(service, biz_import, PERSONAL_EMAIL, WORK_EMAIL)
 
@@ -236,16 +277,18 @@ def main():
     # Fills work_ and personal_events lists with the personal account versions of recent events
     divided_lists = divide_all_events(all_events)
 
+    pp_import = del_cancels(
+        service, divided_lists.get('personal_events', None), PERSONAL_PERSONAL_CAL_ID
+    )
     # Imports the personal events into the personal secondary calendar in my personal account
     import_events(
-        service, divided_lists.get('personal_events', None),
-        PERSONAL_PERSONAL_CAL_ID, PERSONAL_EMAIL
+        service, pp_import, PERSONAL_PERSONAL_CAL_ID, PERSONAL_EMAIL
     )
 
+    pw_import = del_cancels(service, divided_lists.get('work_events', None), WORK_PERSONAL_CAL_ID)
     # Imports the work events into the work secondary calendar in my personal account
     import_events(
-        service, divided_lists.get('work_events', None),
-        WORK_PERSONAL_CAL_ID, PERSONAL_EMAIL
+        service, pw_import, WORK_PERSONAL_CAL_ID, PERSONAL_EMAIL
     )
 
 if __name__ == '__main__':
