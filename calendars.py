@@ -130,18 +130,23 @@ def prep_import_from_work(events_list):
     return output
 
 
-def request_backoff(request):
-    """ The Google Calendar API can take 5 requests per second, apparently. I don't know
-    # how you're really supposed to implement "exponential backoff" ... """
+def request_backoff(service, cal_id, request):
+    """ Wraps either a delete or import request in an "exponential backoff,"
+     I think... """
 
-    # ... but I thought I needed this 'wait' value number - the seconds to wait between
-    # requests - to be greater than zero, so it's divided by ten a little later...
+    # The Google Calendar API can take 5 requests per second, apparently. I don't know
+    # how you're really supposed to implement "exponential backoff" but I think I need
+    # this 'wait' value number - the seconds to wait between requests - to be greater
+    # than zero. It's divided by ten a little later...
     wait = 2.25
     while True:
         try:
             sleep(wait / 10) # waits 0.225 seconds
             # then calls the function
-            request
+            if request.keys()[0] == 'delete':
+                service.events().delete(calendarId=cal_id, eventId=request['delete']).execute()
+            elif request.keys()[0] == 'import':
+                service.events().import_(calendarId=cal_id, body=request['import']).execute()
         except HttpError as err:
             if err.resp.status in [403, 500, 503]:
                 wait = wait * wait # If e.g. Rate Limit Exceeded, squares the wait time
@@ -178,9 +183,7 @@ def del_cancels(service, events_list, cal_id):
                     break
 
             for item in matching_events:
-                request_backoff(service.events().delete(
-                    calendarId=cal_id, eventId=item.get('id', '')
-                ).execute())
+                request_backoff(service, cal_id, {'delete': item.get('id', '')})
 
         return events_list
 
@@ -196,7 +199,7 @@ def import_events(service, events_list, dest_cal_id):
         event.pop('id', None)
         event.pop('recurringEventId', None)
 
-        request_backoff(service.events().import_(calendarId=dest_cal_id, body=event).execute())
+        request_backoff(service, dest_cal_id, {'import': event})
 
 
 def divide_all_events(all_events):
