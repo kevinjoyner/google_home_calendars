@@ -12,7 +12,6 @@ secondary calendar for just the work events, and one for the personal ones.
 import datetime
 from datetime import timedelta
 from time import sleep
-import json
 import argparse
 import httplib2
 from apiclient import discovery
@@ -122,12 +121,32 @@ def prep_import_from_work(events_list):
             'email': PERSONAL_EMAIL,
             'self': True
             }
+
         # Converts declined attendence into having cancelled your own appointment.
         if declined is True:
             event['status'] = 'cancelled'
         output.append(event)
 
     return output
+
+
+def request_backoff(request):
+    """ The Google Calendar API can take 5 requests per second, apparently. I don't know
+    # how you're really supposed to implement "exponential backoff" ... """
+
+    # ... but I thought I needed this 'wait' value number - the seconds to wait between
+    # requests - to be greater than zero, so it's divided by ten a little later...
+    wait = 2.25
+    while True:
+        try:
+            sleep(wait / 10) # waits 0.225 seconds
+            # then calls the function
+            request
+        except HttpError as err:
+            if err.resp.status in [403, 500, 503]:
+                wait = wait * wait # If e.g. Rate Limit Exceeded, squares the wait time
+            else: raise
+        else: break
 
 
 def del_cancels(service, events_list, cal_id):
@@ -145,6 +164,7 @@ def del_cancels(service, events_list, cal_id):
             matching_events = []
             page_token = None
             while True:
+                # On this list request, no need to show deleted events
                 events_result = service.events().list(
                     calendarId=cal_id, pageToken=page_token,
                     singleEvents=True, orderBy='startTime',
@@ -158,48 +178,26 @@ def del_cancels(service, events_list, cal_id):
                     break
 
             for item in matching_events:
-                service.events().delete(
-                    calendarId=cal_id,
-                    eventId=item.get('id', '')
-                ).execute()
+                request_backoff(service.events().delete(
+                    calendarId=cal_id, eventId=item.get('id', '')
+                ).execute())
 
-    return events_list
+        return events_list
 
 
-def import_events(service, events_list, dest_cal_id, orig_cal_id):
+def import_events(service, events_list, dest_cal_id):
     """ Imports list of events to the destination calendar. Uses the originating calendar to work
      around sequence number errors if they occur. """
 
     for event in events_list:
         # Removes the immutable IDs from the event, but saves id in case it's needed.
         # I think it's the standard iCalUID, which remains on the events, that means
-        # this script can run every hour without causing loads of duplicate events.
-        originating_id = event.pop('id', None)
+        # this script can run every hour without causing duplicate events.
+        event.pop('id', None)
         event.pop('recurringEventId', None)
 
-        # The Google Calendar API can take 5 imports per second, apparently. I don't know how you're
-        # really supposed to implement "exponential backoff" but I thought I needed this
-        # number - the seconds to wait between requests - to be greater than zero, so it's divided
-        # by ten a little later...
-        wait = 2.25
-        while True:
-            try:
-                sleep(wait / 10) # waits 0.225 seconds
-                # then imports the event to the primary personal calendar (which your work Google
-                # account needs to be able to access)
-                service.events().import_(calendarId=dest_cal_id, body=event).execute()
-            except HttpError as err:
-                if err.resp.status in [403, 500, 503]:
-                    wait = wait * wait # If e.g. a Rate Limit Exceeded error, squares the wait time
-                elif 'Invalid sequence value.' in json.loads(
-                        err.content.decode('utf-8')
-                )['error']['message']:
-                    event_lookup = service.events().get(
-                        calendarId=orig_cal_id, eventId=originating_id
-                    ).execute()
-                    event['sequence'] = event_lookup.get('sequence', 99)
-                else: raise
-            else: break
+        request_backoff(service.events().import_(calendarId=dest_cal_id, body=event).execute())
+
 
 def divide_all_events(all_events):
     """ Divides the list of all events take back out of the personal calendar into separat
@@ -268,7 +266,7 @@ def main():
 
     biz_import = del_cancels(service, all_biz_import, PERSONAL_EMAIL)
 
-    import_events(service, biz_import, PERSONAL_EMAIL, WORK_EMAIL)
+    import_events(service, biz_import, PERSONAL_EMAIL)
 
     # Fills an all_events list with a complete list of eveything taken back from the
     # personal account.
@@ -281,15 +279,11 @@ def main():
         service, divided_lists.get('personal_events', None), PERSONAL_PERSONAL_CAL_ID
     )
     # Imports the personal events into the personal secondary calendar in my personal account
-    import_events(
-        service, pp_import, PERSONAL_PERSONAL_CAL_ID, PERSONAL_EMAIL
-    )
+    import_events(service, pp_import, PERSONAL_PERSONAL_CAL_ID)
 
     pw_import = del_cancels(service, divided_lists.get('work_events', None), WORK_PERSONAL_CAL_ID)
     # Imports the work events into the work secondary calendar in my personal account
-    import_events(
-        service, pw_import, WORK_PERSONAL_CAL_ID, PERSONAL_EMAIL
-    )
+    import_events(service, pw_import, WORK_PERSONAL_CAL_ID)
 
 if __name__ == '__main__':
     main()
