@@ -130,7 +130,7 @@ def prep_import_from_work(events_list):
     return output
 
 
-def request_backoff(service, cal_id, request):
+def request_backoff(service, cal_id, request_type, request_data):
     """ Wraps either a delete or import request in an "exponential backoff,"
      I think... """
 
@@ -143,10 +143,10 @@ def request_backoff(service, cal_id, request):
         try:
             sleep(wait / 10) # waits 0.225 seconds
             # then calls the function
-            if request.keys()[0] == 'delete':
-                service.events().delete(calendarId=cal_id, eventId=request['delete']).execute()
-            elif request.keys()[0] == 'import':
-                service.events().import_(calendarId=cal_id, body=request['import']).execute()
+            if request_type == 'delete':
+                service.events().delete(calendarId=cal_id, eventId=request_data).execute()
+            elif request_type == 'import':
+                service.events().import_(calendarId=cal_id, body=request_data).execute()
         except HttpError as err:
             if err.resp.status in [403, 500, 503]:
                 wait = wait * wait # If e.g. Rate Limit Exceeded, squares the wait time
@@ -183,7 +183,7 @@ def del_cancels(service, events_list, cal_id):
                     break
 
             for item in matching_events:
-                request_backoff(service, cal_id, {'delete': item.get('id', '')})
+                request_backoff(service, cal_id, 'delete', item.get('id', ''))
 
         return events_list
 
@@ -199,7 +199,7 @@ def import_events(service, events_list, dest_cal_id):
         event.pop('id', None)
         event.pop('recurringEventId', None)
 
-        request_backoff(service, dest_cal_id, {'import': event})
+        request_backoff(service, dest_cal_id, 'import', event)
 
 
 def divide_all_events(all_events):
