@@ -148,7 +148,7 @@ def del_cancels(service, events_list, cal_id):
                 events_result = service.events().list(
                     calendarId=cal_id, pageToken=page_token,
                     singleEvents=True, orderBy='startTime',
-                    showDeleted=True, showHiddenInvitations=True,
+                    showDeleted=False, showHiddenInvitations=True,
                     timeMin=MONTHS_AGO, timeMax=MONTHS_AWAY,
                     iCalUID=event.get('iCalUID', '')
                 ).execute()
