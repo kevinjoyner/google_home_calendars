@@ -78,7 +78,6 @@ def get_events_list(service, cal_id):
         page_token = events_result.get('nextPageToken')
         if not page_token:
             break
-
     return output
 
 def decline_check(event, declining_email):
@@ -94,7 +93,6 @@ def decline_check(event, declining_email):
                     # Having discovered that you're not planning to attend, saves
                     # this for later.
                     declined = True
-
     return declined
 
 def prep_import_from_work(events_list):
@@ -181,11 +179,9 @@ def del_cancels(service, events_list, cal_id):
                 page_token = events_result.get('nextPageToken')
                 if not page_token:
                     break
-
             for item in matching_events:
                 request_backoff(service, cal_id, 'delete', item.get('id', ''))
-
-        return events_list
+    return events_list
 
 
 def import_events(service, events_list, dest_cal_id):
