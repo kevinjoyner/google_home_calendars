@@ -263,25 +263,29 @@ def main():
     # Fills a biz_import list with the work events modified for import to personal account
     all_biz_import = prep_import_from_work(biz_events)
 
+    # Deletes (work declines and) cancellations from the primary personal calendar
     biz_import = del_cancels(service, all_biz_import, PERSONAL_EMAIL)
 
+    # Imports the remaining work events into the primary personal calendar
     import_events(service, biz_import, PERSONAL_EMAIL)
 
     # Fills an all_events list with a complete list of eveything taken back from the
-    # personal account.
+    # primary personal calendar
     all_events = get_events_list(service, PERSONAL_EMAIL)
 
-    # Fills work_ and personal_events lists with the personal account versions of recent events
+    # Fills work_ and personal_events lists with the personal account versions of events
     divided_lists = divide_all_events(all_events)
 
+    # Deletes cancellations from the personal secondary calendar in the personal account
     pp_import = del_cancels(
         service, divided_lists.get('personal_events', None), PERSONAL_PERSONAL_CAL_ID
     )
-    # Imports the personal events into the personal secondary calendar in my personal account
+    # Imports the personal events into the personal secondary calendar in the personal account
     import_events(service, pp_import, PERSONAL_PERSONAL_CAL_ID)
 
+    # Deletes cancellations from the work secondary calendar in the personal account
     pw_import = del_cancels(service, divided_lists.get('work_events', None), WORK_PERSONAL_CAL_ID)
-    # Imports the work events into the work secondary calendar in my personal account
+    # Imports the work events into the work secondary calendar in the personal account
     import_events(service, pw_import, WORK_PERSONAL_CAL_ID)
 
 if __name__ == '__main__':
