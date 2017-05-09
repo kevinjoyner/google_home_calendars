@@ -13,6 +13,7 @@ import datetime
 from datetime import timedelta
 from time import sleep
 import argparse
+import dateutil.parser
 import httplib2
 from apiclient import discovery
 from apiclient.errors import HttpError
@@ -179,8 +180,27 @@ def del_cancels(service, events_list, cal_id):
                 page_token = events_result.get('nextPageToken')
                 if not page_token:
                     break
+
+            # Builds a list of event IDs to delete, so as to be able to avoid duplication
+            ids_to_delete = []
             for item in matching_events:
-                request_backoff(service, cal_id, 'delete', item.get('id', ''))
+                # Avoids deleting whole series of recurring events by building IDs for
+                # individual event cancellations
+                if 'recurringEventId' in item:
+                    item['id'] = item['recurringEventId'] + '_' + \
+                    datetime.datetime.strftime(
+                        dateutil.parser.parse(item['start']['dateTime']),
+                        '%Y%m%dT%H%M%SZ'
+                    )
+                ids_to_delete.append(item.get('id', ''))
+
+            # Dedupes the list of IDs for deletion
+            ids_to_delete = list(set(ids_to_delete))
+
+            # Deletes the events you've (declined or) cancelled from the destination calendar
+            for item in ids_to_delete:
+                request_backoff(service, cal_id, 'delete', item)
+
     return events_list
 
 
