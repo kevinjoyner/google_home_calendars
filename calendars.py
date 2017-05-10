@@ -14,6 +14,7 @@ from datetime import timedelta
 from time import sleep
 import argparse
 import dateutil.parser
+import pytz
 import httplib2
 from apiclient import discovery
 from apiclient.errors import HttpError
@@ -103,6 +104,17 @@ def prep_import_from_work(events_list):
     for event in events_list:
         declined = decline_check(event, WORK_EMAIL)
 
+        # If personal email is organiser or attendee, then skip this event
+        if event['organizer']['email'] == PERSONAL_EMAIL:
+            continue
+        personally_invited = False
+        if 'attendees' in event:
+            for attendee in event['attendees']:
+                if attendee['email'] == PERSONAL_EMAIL:
+                    personally_invited = True
+        if personally_invited is True:
+            continue
+
         # Tags the events in the description field with something distinctive
         event['description'] = event.get('description', '') + \
                                                         '## sync\'d from work ##'
@@ -189,7 +201,8 @@ def del_cancels(service, events_list, cal_id):
                 if 'recurringEventId' in item:
                     item['id'] = item['recurringEventId'] + '_' + \
                     datetime.datetime.strftime(
-                        dateutil.parser.parse(item['start']['dateTime']),
+                        dateutil.parser.parse(item['start']['dateTime'])
+                        .astimezone(pytz.timezone('UTC')),
                         '%Y%m%dT%H%M%SZ'
                     )
                 ids_to_delete.append(item.get('id', ''))
