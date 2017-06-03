@@ -95,6 +95,7 @@ def decline_check(event, declining_email):
                     # Having discovered that you're not planning to attend, saves
                     # this for later.
                     declined = True
+                    break
     return declined
 
 def prep_import_from_work(events_list):
@@ -107,6 +108,7 @@ def prep_import_from_work(events_list):
         # If personal email is organiser or attendee, then skip this event
         if event['organizer']['email'] == PERSONAL_EMAIL:
             continue
+
         personally_invited = False
         if 'attendees' in event:
             for attendee in event['attendees']:
@@ -117,16 +119,15 @@ def prep_import_from_work(events_list):
 
         # Tags the events in the description field with something distinctive
         event['description'] = event.get('description', '') + \
-                                                        '## sync\'d from work ##'
+                                                        '\\n\\n## sync\'d from work ##'
 
         # Strips off attendees so that you don't accidentally re-invite all your client
         # contacts to meetings that have been cancelled, or execute some similarly
         # career-limiting mistake.
         event.pop('attendees', None)
 
-        # Fixes your personal self as the organizer, so that the events always remain
-        # compatible with the fickle laws of calendars: i.e. you do need to be
-        # either attending or organising a meeting that's in your calendar.
+        # Fixes your personal self as the organizer, because a calendar requires
+        # that you are either attending or organising a meeting that's in your calendar.
         event['organizer'] = {
             'displayName': MY_DISPLAY_NAME,
             'email': PERSONAL_EMAIL,
@@ -148,7 +149,7 @@ def request_backoff(service, cal_id, request_type, request_data):
     # The Google Calendar API can take 5 requests per second, apparently. I don't know
     # how you're really supposed to implement "exponential backoff" but I think I need
     # this 'wait' value number - the seconds to wait between requests - to be greater
-    # than zero. It's divided by ten a little later...
+    # than zero - so it's divided by ten a little later...
     wait = 2.25
     while True:
         try:
@@ -177,42 +178,43 @@ def del_cancels(service, events_list, cal_id):
             for_deletion.append(event)
             events_list.remove(event)
 
-            matching_events = []
-            page_token = None
-            while True:
-                # On this list request, no need to show deleted events
-                events_result = service.events().list(
-                    calendarId=cal_id, pageToken=page_token,
-                    singleEvents=True, orderBy='startTime',
-                    showDeleted=False, showHiddenInvitations=True,
-                    timeMin=MONTHS_AGO, timeMax=MONTHS_AWAY,
-                    iCalUID=event.get('iCalUID', '')
-                ).execute()
-                matching_events.extend(events_result.get('items'))
-                page_token = events_result.get('nextPageToken')
-                if not page_token:
-                    break
+    for event in for_deletion:
+        matching_events = []
+        page_token = None
+        while True:
+            # On this list request, no need to show deleted events
+            events_result = service.events().list(
+                calendarId=cal_id, pageToken=page_token,
+                singleEvents=True, orderBy='startTime',
+                showDeleted=False, showHiddenInvitations=True,
+                timeMin=MONTHS_AGO, timeMax=MONTHS_AWAY,
+                iCalUID=event.get('iCalUID', '')
+            ).execute()
+            matching_events.extend(events_result.get('items'))
+            page_token = events_result.get('nextPageToken')
+            if not page_token:
+                break
 
-            # Builds a list of event IDs to delete, so as to be able to avoid duplication
-            ids_to_delete = []
-            for item in matching_events:
-                # Avoids deleting whole series of recurring events by building IDs for
-                # individual event cancellations
-                if 'recurringEventId' in item:
-                    item['id'] = item['recurringEventId'] + '_' + \
-                    datetime.datetime.strftime(
-                        dateutil.parser.parse(item['start']['dateTime'])
-                        .astimezone(pytz.timezone('UTC')),
-                        '%Y%m%dT%H%M%SZ'
-                    )
-                ids_to_delete.append(item.get('id', ''))
+        # Builds a list of event IDs to delete, so as to be able to avoid duplication
+        ids_to_delete = []
+        for item in matching_events:
+            # Avoids deleting whole series of recurring events by building IDs for
+            # individual event cancellations
+            if 'recurringEventId' in item:
+                item['id'] = item['recurringEventId'] + '_' + \
+                datetime.datetime.strftime(
+                    dateutil.parser.parse(item['start']['dateTime'])
+                    .astimezone(pytz.timezone('UTC')),
+                    '%Y%m%dT%H%M%SZ'
+                )
+            ids_to_delete.append(item.get('id', ''))
 
-            # Dedupes the list of IDs for deletion
-            ids_to_delete = list(set(ids_to_delete))
+        # Dedupes the list of IDs for deletion
+        ids_to_delete = list(set(ids_to_delete))
 
-            # Deletes the events you've (declined or) cancelled from the destination calendar
-            for item in ids_to_delete:
-                request_backoff(service, cal_id, 'delete', item)
+        # Deletes the events you've (declined or) cancelled from the destination calendar
+        for item in ids_to_delete:
+            request_backoff(service, cal_id, 'delete', item)
 
     return events_list
 
@@ -222,9 +224,9 @@ def import_events(service, events_list, dest_cal_id):
      around sequence number errors if they occur. """
 
     for event in events_list:
-        # Removes the immutable IDs from the event, but saves id in case it's needed.
-        # I think it's the standard iCalUID, which remains on the events, that means
-        # this script can run every hour without causing duplicate events.
+        # Removes the immutable IDs from the event. I think it's the standard iCalUID,
+        # which remains on the events, that means this script can run every hour without
+        # causing duplicate events.
         event.pop('id', None)
         event.pop('recurringEventId', None)
 
@@ -232,7 +234,7 @@ def import_events(service, events_list, dest_cal_id):
 
 
 def divide_all_events(all_events):
-    """ Divides the list of all events take back out of the personal calendar into separat
+    """ Divides the list of all events take back out of the personal calendar into separate
      personal and work lists. """
 
     work_events = personal_events = []
@@ -253,9 +255,8 @@ def divide_all_events(all_events):
                     'email': WORK_PERSONAL_CAL_ID,
                     'self': True
                 }
-                # I share my work events with my wife. This next line makes sure that - except
-                # for someone getting into my home and playing a recording of my voice to my
-                # Google Home, I'm in-line with my employer's permissions - by forcing
+                # This next line makes sure that access to events in the work secondary
+                # calendar (i.e. in the personal account) is restricted, with
                 # 'private' visibility.
                 event['visibility']	= 'private'
                 work_events.append(event)
@@ -281,6 +282,7 @@ def divide_all_events(all_events):
             if declined is True:
                 event['status'] = 'cancelled'
             personal_events.append(event)
+
     return {'work_events': work_events, 'personal_events': personal_events}
 
 def main():
@@ -296,7 +298,7 @@ def main():
     # Fills a biz_import list with the work events modified for import to personal account
     all_biz_import = prep_import_from_work(biz_events)
 
-    # Deletes (work declines and) cancellations from the primary personal calendar
+    # Deletes work (declines and) cancellations from the primary personal calendar
     biz_import = del_cancels(service, all_biz_import, PERSONAL_EMAIL)
 
     # Imports the remaining work events into the primary personal calendar
