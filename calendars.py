@@ -239,7 +239,7 @@ def divide_all_events(all_events):
 
     work_events = personal_events = []
     for event in all_events:
-        declined = decline_check(event, PERSONAL_EMAIL)
+        # declined = decline_check(event, PERSONAL_EMAIL)
 
         # Strips off attendees so that you don't accidentally re-invite all your client
         # contacts to meetings that have been cancelled, or execute some similarly
@@ -249,40 +249,64 @@ def divide_all_events(all_events):
         # Fills the two lists based on the presence of the description field work tag.
         if 'description' in event:
             if '## sync\'d from work ##' in event['description']:
-                # Sets the right organiser for the calendar the event is going into.
-                event['organizer'] = {
-                    'displayName': 'Kevin - Work only',
-                    'email': WORK_PERSONAL_CAL_ID,
-                    'self': True
-                }
-                # This next line makes sure that access to events in the work secondary
-                # calendar (i.e. in the personal account) is restricted, with
-                # 'private' visibility.
-                event['visibility']	= 'private'
+                # # Sets the right organiser for the calendar the event is going into.
+                # event['organizer'] = {
+                #     'displayName': 'Kevin - Work only',
+                #     'email': WORK_PERSONAL_CAL_ID,
+                #     'self': True
+                # }
+                # # This next line makes sure that access to events in the work secondary
+                # # calendar (i.e. in the personal account) is restricted, with
+                # # 'private' visibility.
+                # event['visibility']	= 'private'
                 work_events.append(event)
             else:
                 # Sets the right organiser for the calendar the event is going into.
-                event['organizer'] = {
-                    'displayName': 'Kevin - Personal only',
-                    'email': PERSONAL_PERSONAL_CAL_ID,
-                    'self': True
-                }
-                # Converts declined attendence into having cancelled your own appointment.
-                if declined is True:
-                    event['status'] = 'cancelled'
+                # event['organizer'] = {
+                #     'displayName': 'Kevin - Personal only',
+                #     'email': PERSONAL_PERSONAL_CAL_ID,
+                #     'self': True
+                # }
+                # # Converts declined attendence into having cancelled your own appointment.
+                # if declined is True:
+                #     event['status'] = 'cancelled'
                 personal_events.append(event)
         else:
             # I don't know if this happens but if there was no description at all, it couldn't
             # be a work event.
-            event['organizer'] = {
-                'displayName': 'Kevin - Personal only',
-                'email': PERSONAL_PERSONAL_CAL_ID,
-                'self': True
-            }
-            if declined is True:
-                event['status'] = 'cancelled'
+            # event['organizer'] = {
+            #     'displayName': 'Kevin - Personal only',
+            #     'email': PERSONAL_PERSONAL_CAL_ID,
+            #     'self': True
+            # }
+            # if declined is True:
+            #     event['status'] = 'cancelled'
             personal_events.append(event)
 
+    for event in work_events:
+        # Sets the right organiser for the calendar the event is going into.
+        event['organizer'] = {
+            'displayName': 'Kevin - Work only',
+            'email': WORK_PERSONAL_CAL_ID,
+            'self': True
+        }
+        # This next line makes sure that access to events in the work secondary
+        # calendar (i.e. in the personal account) is restricted, with
+        # 'private' visibility.
+        event['visibility']	= 'private'
+    
+    for event in personal_events:
+        declined = decline_check(event, PERSONAL_EMAIL)
+        # Sets the right organiser for the calendar the event is going into.
+        event['organizer'] = {
+            'displayName': 'Kevin - Personal only',
+            'email': PERSONAL_PERSONAL_CAL_ID,
+            'self': True
+        }
+        # Converts declined attendence into having cancelled your own appointment.
+        if declined is True:
+            event['status'] = 'cancelled'
+        
     return {'work_events': work_events, 'personal_events': personal_events}
 
 def main():
