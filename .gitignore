@@ -1,3 +1,4 @@
+__pycache__
 credentials/*
 !/credentials/_put_client_secret_json_file_here
 cleanup.py

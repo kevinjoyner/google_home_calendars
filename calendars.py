@@ -197,17 +197,17 @@ def del_cancels(service, events_list, cal_id):
 
         # Builds a list of event IDs to delete, so as to be able to avoid duplication
         ids_to_delete = []
-        for item in matching_events:
-            # Avoids deleting whole series of recurring events by building IDs for
-            # individual event cancellations
-            if 'recurringEventId' in item:
-                item['id'] = item['recurringEventId'] + '_' + \
-                datetime.datetime.strftime(
-                    dateutil.parser.parse(item['start']['dateTime'])
-                    .astimezone(pytz.timezone('UTC')),
-                    '%Y%m%dT%H%M%SZ'
-                )
-            ids_to_delete.append(item.get('id', ''))
+        # for item in matching_events:
+        #     # Avoids deleting whole series of recurring events by building IDs for
+        #     # individual event cancellations
+        #     if 'recurringEventId' in item:
+        #         item['id'] = item['recurringEventId'] + '_' + \
+        #         datetime.datetime.strftime(
+        #             dateutil.parser.parse(item['start']['dateTime'])
+        #             .astimezone(pytz.timezone('UTC')),
+        #             '%Y%m%dT%H%M%SZ'
+        #         )
+        #     ids_to_delete.append(item.get('id', ''))
 
         # Dedupes the list of IDs for deletion
         ids_to_delete = list(set(ids_to_delete))
