@@ -3,4 +3,4 @@ credentials/*
 !/credentials/_put_client_secret_json_file_here
 cleanup.py
 remove.py
-config.py
+config.json
