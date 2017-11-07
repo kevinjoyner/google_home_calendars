@@ -1,16 +1,16 @@
 """ doc string"""
 
 from time import sleep
-from Connectors import CalConnector
-from Actions import Command
+from Connectors.CalConnector import CalConnector
 from apiclient.errors import HttpError
 
 
 class Command(object):
     """ doc string """
     def __init__(self):
-        connector = CalConnector.CalConnector()
-        self.service = connector.service
+        connector = CalConnector()
+        credentials = connector.get_credentials()
+        self.service = connector.setup(credentials)
 
     def delete_event(self, cal_id, event_id):
         """ Wraps either a delete or import request in an "exponential backoff,"
@@ -47,7 +47,17 @@ class Command(object):
                 break
         for item in matching_events:
             try:
-                Command.delete_event(self.service, cal_id, item.get('id', ''))
+                wait = 2.25
+                while True:
+                    try:
+                        sleep(wait / 10) # waits 0.225 seconds
+                        # then calls the function
+                        self.service.events().delete(calendarId=cal_id, eventId=item.get('id', '')).execute()
+                    except HttpError as err:
+                        if err.resp.status in [403, 500, 503]:
+                            wait = wait * wait # If e.g. Rate Limit Exceeded, squares the wait time
+                        else: raise
+                    else: break
             except HttpError as err:
                 if err.resp.status in [410]:
                     continue

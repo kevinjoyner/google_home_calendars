@@ -3,7 +3,7 @@
 import json
 import datetime
 from datetime import timedelta
-from Connectors import CalConnector
+from Connectors.CalConnector import CalConnector
 from apiclient.errors import HttpError
 
 # Load your private configuration variables.
@@ -20,8 +20,9 @@ MONTHS_AWAY = (datetime.datetime.utcnow() + timedelta(days=93)).isoformat() + 'Z
 class EventsFetcher(object):
     """ doc string """
     def __init__(self):
-        connector = CalConnector.CalConnector()
-        self.service = connector.service
+        connector = CalConnector()
+        credentials = connector.get_credentials()
+        self.service = connector.setup(credentials)
 
     def fetch_events(self, cal_id, sync_token):
         """ Fetches list of events from specified calendar ID. """
