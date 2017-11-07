@@ -1,0 +1,32 @@
+[
+    {
+        "calendars": {
+            "personal": {
+                "calendars": {
+                    "personal": {
+                        "display_name": "Personal",
+                        "email": "#@group.calendar.google.com"
+                    },
+                    "work": {
+                        "display_name": "Work",
+                        "email": "#@group.calendar.google.com"
+                    }
+                },
+                "sync_token": null,
+                "display_name": "#@gmail.com",
+                "email": "#@gmail.com"
+            },
+            "work": {
+                "sync_token": null,
+                "email": "#@croud.co.uk"
+            },
+            "_comment": "Create secondary calendars in your personal Google account, one for work and one for personal events."
+        },
+        "credentials": {
+            "CLIENT_SECRET_PATH": "credentials/#.apps.googleusercontent.com.json",
+            "CREDENTIALS_DIR": "credentials/",
+            "_comment": "Set this to the path and file name of your client secret JSON file"
+        },
+        "_comment": "This file holds private config variables. It's read by calendars.py"
+    }
+]
