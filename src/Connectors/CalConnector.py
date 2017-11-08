@@ -17,8 +17,8 @@ APPLICATION_NAME = 'API thing'
 # Load your private configuration variables.
 with open('config.json', 'r') as config_file:
     CONFIG_JSON = json.load(config_file)
-    CREDENTIALS_DIR = CONFIG_JSON[0]["credentials"]["CREDENTIALS_DIR"]
-    CLIENT_SECRET_PATH = CONFIG_JSON[0]["credentials"]["CLIENT_SECRET_PATH"]
+    CREDENTIALS_DIR = CONFIG_JSON[0]["credentials"]["dir"]
+    CLIENT_SECRET_PATH = CONFIG_JSON[0]["credentials"]["path"]
 
 
 class CalConnector(object):
