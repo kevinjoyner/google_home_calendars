@@ -65,7 +65,6 @@ def main():
     command.delete_events(PERSONAL_EMAIL, '## sync\'d from work ##')
     command.delete_events(PERSONAL_PERSONAL_CAL_ID)
     command.delete_events(PERSONAL_WORK_CAL_ID)
-
     for event in events_for_import:
         command.import_event(PERSONAL_EMAIL, event)
 
@@ -73,32 +72,28 @@ def main():
     work_events = personal_events = []
     work_event_checker = WorkEventChecker()
     for event in all_personal_events:
-        if work_event_checker(event):
+        if work_event_checker.work_event_check(event):
             work_events.append(event)
         else:
             personal_events.append(event)
 
     for event in work_events:
-        # If it turns out the organiser should be PERSONAL_EMAIL on both sets of events, then
-        # do it once to all of them?
         event = transformer.set_organiser_on_events(
-            event, PERSONAL_DISPLAY_NAME, PERSONAL_EMAIL
+            event, PERSONAL_WORK_DISPLAY_NAME, PERSONAL_WORK_CAL_ID
         )
         event = transformer.set_private(event)
         event = transformer.remove_attendees(event)
+        command.import_event(PERSONAL_WORK_CAL_ID, event)
+
     for event in personal_events:
         declined = declined_checker.decline_check(event, PERSONAL_EMAIL)
         event = transformer.remove_attendees(event)
         event = transformer.set_organiser_on_events(
-            event, PERSONAL_DISPLAY_NAME, PERSONAL_EMAIL
+            event, PERSONAL_PERSONAL_DISPLAY_NAME, PERSONAL_PERSONAL_CAL_ID
         )
         if declined is True:
             event = transformer.set_as_cancelled(event)
-
-    for event in personal_events:
-        command.import_event(PERSONAL_PERSONAL_CAL_ID, event)
-    for event in personal_events:
-        command.import_event(PERSONAL_WORK_CAL_ID, event)
+        command.import_event(PERSONAL_PERSONAL_CAL_ID, event)        
 
 if __name__ == '__main__':
     main()

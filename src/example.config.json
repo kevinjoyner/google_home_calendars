@@ -23,8 +23,8 @@
             "_comment": "Create secondary calendars in your personal Google account, one for work and one for personal events."
         },
         "credentials": {
-            "CLIENT_SECRET_PATH": "credentials/#.apps.googleusercontent.com.json",
-            "CREDENTIALS_DIR": "credentials/",
+            "path": "credentials/#.apps.googleusercontent.com.json",
+            "dir": "credentials/",
             "_comment": "Set this to the path and file name of your client secret JSON file"
         },
         "_comment": "This file holds private config variables. It's read by calendars.py"
