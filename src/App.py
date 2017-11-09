@@ -62,9 +62,9 @@ def main():
 
     command = Command()
     # Sync tokens mean these deletes should not be needed?
-    command.delete_events(PERSONAL_EMAIL, '## sync\'d from work ##')
-    command.delete_events(PERSONAL_PERSONAL_CAL_ID)
-    command.delete_events(PERSONAL_WORK_CAL_ID)
+    # command.delete_events(PERSONAL_EMAIL, '## sync\'d from work ##')
+    # command.delete_events(PERSONAL_PERSONAL_CAL_ID)
+    # command.delete_events(PERSONAL_WORK_CAL_ID)
     for event in events_for_import:
         command.import_event(PERSONAL_EMAIL, event)
 
