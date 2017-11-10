@@ -14,3 +14,5 @@ class WorkEventChecker(object):
                 work_event = False
         else:
             work_event = False
+
+        return work_event
