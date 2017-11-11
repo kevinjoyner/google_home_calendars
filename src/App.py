@@ -72,7 +72,7 @@ def main():
     work_events = personal_events = []
     work_event_checker = WorkEventChecker()
     for event in all_personal_events:
-        if work_event_checker.work_event_check(event):
+        if work_event_checker.work_event_check(event) is True:
             work_events.append(event)
         else:
             personal_events.append(event)
@@ -93,7 +93,7 @@ def main():
         )
         if declined is True:
             event = transformer.set_as_cancelled(event)
-        command.import_event(PERSONAL_PERSONAL_CAL_ID, event)        
+        command.import_event(PERSONAL_PERSONAL_CAL_ID, event)
 
 if __name__ == '__main__':
     main()
