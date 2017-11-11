@@ -9,7 +9,7 @@ class WorkEventChecker(object):
         """ doc string """
         work_event = False
         if 'description' in event:
-            if '## sync\'d from work ##' in event['description']:
+            if ' sync\'d from work ' in event['description']:
                 work_event = True
 
         return work_event
