@@ -72,7 +72,8 @@ def main():
     work_events = personal_events = []
     work_event_checker = WorkEventChecker()
     for event in all_personal_events:
-        if work_event_checker.work_event_check(event) is True:
+        is_work_event = work_event_checker.work_event_check(event)
+        if is_work_event is True:
             work_events.append(event)
         else:
             personal_events.append(event)
