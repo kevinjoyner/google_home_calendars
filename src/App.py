@@ -61,7 +61,7 @@ def main():
             events_for_import.append(event_for_import)
 
     command = Command()
-    if delete = True:
+    if delete is True:
         command.delete_events(PERSONAL_EMAIL, " sync\'d from work ")
     for event in events_for_import:
         command.import_event(PERSONAL_EMAIL, event)
@@ -77,7 +77,7 @@ def main():
         else:
             personal_events.append(event)
 
-    if delete = True:
+    if delete is True:
         command.delete_events(PERSONAL_WORK_CAL_ID)
         command.delete_events(PERSONAL_PERSONAL_CAL_ID)
 
