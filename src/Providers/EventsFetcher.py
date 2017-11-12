@@ -27,6 +27,7 @@ class EventsFetcher(object):
     def fetch_events(self, cal_id, sync_token):
         """ Fetches list of events from specified calendar ID. """
         output = []
+        delete = False
         page_token = None
         while True:
             if sync_token:
@@ -34,11 +35,11 @@ class EventsFetcher(object):
                     events_result = self.service.events().list(
                         calendarId=cal_id,
                         pageToken=page_token,
-                        syncToken=sync_token,
-                        timeMin=MONTHS_AGO, timeMax=MONTHS_AWAY
+                        syncToken=sync_token
                     ).execute()
                 except HttpError as err:
-                    if err.resp.status in [401]:
+                    if err.resp.status in [410]:
+                        delete = True
                         if cal_id == WORK_EMAIL:
                             CONFIG_JSON[0]["calendars"]["work"]["sync_token"] =\
                                 sync_token = None
@@ -73,4 +74,4 @@ class EventsFetcher(object):
                 with open('config.json', 'w') as config_out_file:
                     json.dump(CONFIG_JSON, config_out_file, indent=4)
                 break
-        return output
+        return output, delete

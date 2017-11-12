@@ -38,7 +38,7 @@ def main():
     """ The main function """
 
     events_fetcher = EventsFetcher()
-    events_from_work_cal = events_fetcher.fetch_events(WORK_EMAIL, WORK_SYNC_TOKEN)
+    events_from_work_cal, delete = events_fetcher.fetch_events(WORK_EMAIL, WORK_SYNC_TOKEN)
 
     declined_checker = DeclinedChecker()
     transformer = Transformer()
@@ -61,10 +61,12 @@ def main():
             events_for_import.append(event_for_import)
 
     command = Command()
+    if delete = True:
+        command.delete_events(PERSONAL_EMAIL, " sync\'d from work ")
     for event in events_for_import:
         command.import_event(PERSONAL_EMAIL, event)
 
-    all_personal_events = events_fetcher.fetch_events(PERSONAL_EMAIL, PERSONAL_SYNC_TOKEN)
+    all_personal_events, delete = events_fetcher.fetch_events(PERSONAL_EMAIL, PERSONAL_SYNC_TOKEN)
     work_event_checker = WorkEventChecker()
     work_events = []
     personal_events = []
@@ -74,6 +76,10 @@ def main():
             work_events.append(event)
         else:
             personal_events.append(event)
+
+    if delete = True:
+        command.delete_events(PERSONAL_WORK_CAL_ID)
+        command.delete_events(PERSONAL_PERSONAL_CAL_ID)
 
     for event in work_events:
         event = transformer.set_organiser_on_events(
