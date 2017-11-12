@@ -61,16 +61,13 @@ def main():
             events_for_import.append(event_for_import)
 
     command = Command()
-    # Sync tokens mean these deletes should not be needed?
-    # command.delete_events(PERSONAL_EMAIL, '## sync\'d from work ##')
-    # command.delete_events(PERSONAL_PERSONAL_CAL_ID)
-    # command.delete_events(PERSONAL_WORK_CAL_ID)
     for event in events_for_import:
         command.import_event(PERSONAL_EMAIL, event)
 
     all_personal_events = events_fetcher.fetch_events(PERSONAL_EMAIL, PERSONAL_SYNC_TOKEN)
-    work_events = personal_events = []
     work_event_checker = WorkEventChecker()
+    work_events = []
+    personal_events = []
     for event in all_personal_events:
         is_work_event = work_event_checker.work_event_check(event)
         if is_work_event is True:
